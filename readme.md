@@ -18,7 +18,7 @@ Repo to store sessions and talks that are currently available.  Each of the topi
 
 ## Bio
 
-Dustin Brown is the Director of Technology for SitePro Corporation, a husband, father of twins, volunteer, storm chaser, and a beach lover landlocked in West Texas. Life long technology advocate with a professional career spanning 20 years of innovative problem solving and product development with the best tools in the industry.  Has consulted and worked with industry leaders in IoT, automation, telco, agriculture, and nonprofits including SitePro, Microsoft, Motorola, Nokia, Yahoo and been involved in many start ups.  Passionate for pushing the limits with cloud technologies, virtualization, and security.
+Dustin Brown is the Director of Technology for SitePro Corporation, husband, father of twins, volunteer & land-locked beach lover. Life long technology advocate.  20 years and running career centered around innovative problem solving and product development.  Experience with industry leaders in IoT, automation, telecom, agriculture & nonprofits.  Resume looks like a technology gauntlet: SitePro, Microsoft, Motorolla, Nokia, Yahoo and many start ups.  Constantly looking to push the limits of cloud technologies, virtualization, and security.
 
-He has a passion for sharing his experiences and learning through teaching and fostering passion for technology; founded the Lubbock Software Developers Group among other user groups and meetups over the years. 
+Love spreading the technology gospel in the community; founded the Lubbock Software Developers Group among others.
 
