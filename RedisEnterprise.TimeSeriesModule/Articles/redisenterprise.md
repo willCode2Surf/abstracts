@@ -1,4 +1,4 @@
-# Get excited for Redis Enterprise on Azure
+# Get excited for Redis Enterprise on Azure (#1)
 
 Everyone that I have worked with loves Redis.  It is a highly effective tool used as a database, cache, pubsub, and many other things.  It is highly optimized and enjoyed success for 10 years in its space.  Redis's ease of use and intense scalability make it a must use in my opinion.  So how could Redis Labs improve Redis?  Take on a strategic partnership with Microsoft Azure and roll out the Redis Enterprise tier!
 
