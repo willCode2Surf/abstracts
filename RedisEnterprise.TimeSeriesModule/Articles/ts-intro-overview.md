@@ -38,9 +38,9 @@ Since the first post in this series Redis Labs has fully launched Redis Enterpri
 
 ### Understanding the TimeSeries Module Features
 
-The Redis Enterprise platform brings with it the standard expectation of a tried and true tool in any modern stack but with scale in mind.  It is important to cover the features that can be leveraged and combined within the TimeSeries Module so early planning can take these into consideration.
+The Redis Enterprise platform brings with it the standard expectation of a tried-and-true tool in any modern stack but with scale in mind.  It is important to cover the features that can be leveraged and combined within the TimeSeries Module so early planning can take these into consideration.
 
-There are a few key concepts that we need to expand on so that you can get the most of the implementation.  Lets cover the concepts that need to be understood before ingesting data.  (We will talk consumption in depth in the next post.)
+There are a few key concepts that we need to expand on so that you can get most of the implementation.  Let’s cover the concepts that need to be understood before ingesting data.  (We will talk consumption in depth in the next post.)
 
 1. Keys, this is not a new concept and are the way to sink data into the instance.  There are some attributes of keys that you can finetune data policies.
     * retention, give your data a TTL
@@ -102,7 +102,7 @@ Let's take a look at a sample log reading for a weather sensor.
 }
 ```
 
-This sample log has many constant attributes and some interesting data points that can vary with every reading.  If the scientific equipment produces a sample each second then over a period of 24 hours we will receive 86,400 readings.  If we we had 100 devices in a particular region providing realtime weather data we could easily ingest close to 9M logs.  To perform some level of analytics (either visually or with additional ETL/ML pipelines) we need to downsample the footprint.  
+This sample log has many constant attributes and some interesting data points that can vary with every reading.  If the scientific equipment produces a sample each second, then over a period of 24 hours we will receive 86,400 readings.  If we we had 100 devices in a particular region providing realtime weather data, we could easily ingest close to 9M logs.  To perform some level of analytics (either visually or with additional ETL/ML pipelines) we need to downsample the footprint.  
 
 Tradiontally one might sink this log reading into Cosmos or Mongo and aggregrate on demand while handling the downsampling in code.  This is problematic, does not scale well, and is destined to fail at some point.  The better approach is to sink this data into Redis Enterprise using the TimeSeries Module.  The first thing to planning for a succesfull TimeSeries implementation is flattening your logs by identifying both reading data and meta data.  
 
@@ -150,9 +150,7 @@ With this topology defined we need to create keys for the attributes.
 | visibility    | sensors:47732234:visibility    |
 | barometer     | sensors:47732234:barometer     |
 
-
-Before we create the keys we need to identify the meta-data that we are going to associate with them as well as the TTL for series data and our duplcate policy.  TTL will default to 0 by default but in our case we want to keep the data for 30 days and take the last reading if there was contention on a series. This
-
+Before we create the keys, we need to identify the meta-data that we are going to associate with them as well as the TTL for series data and our duplcate policy.  TTL will default to 0 by default but in our case, we want to keep the data for 30 days and take the last reading if there was contention on a series. This
 
 Based on our sample log we need to add the following labels to our keys.
 
@@ -162,7 +160,6 @@ Based on our sample log we need to add the following labels to our keys.
 | lon       | lon 101.82     |
 | elevation | elevation 3281 |
 | city      | city 2232      |
-
 
 Now let's create the keys.  You can always create the keys from the CLI in RedisInsight like so.
 
@@ -183,7 +180,6 @@ const options = {
 }
 const rtsClient = new RedisTimeSeries(options);
 const retentionTime = 86400000 * 30;
-
 
 // key generation
  let labels = {
@@ -210,8 +206,7 @@ We can validate that our key has been created by using the RedisInsight CLI comm
 ```console
 >> TS.INFO sensors:47732234:temp
 ```
-![TS.INFO](images/tsinfo.png)
-
+![TS.INFO](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/niqeczff6adzqv4sn53k.png)
 
 ----------------------------------------------------------------
 
@@ -227,10 +222,10 @@ This is where we can define rules that react to data as it is ingested and downs
 
 NOTE:  there are a couple things about rules that need to be made understood upfront.
 
-* rules need an aggregration type.
+* rules need an aggregation type.
 * rules need a time interval to retain samples for.
 * rules need downstream keys to sink the reactive data into.
-* rules will not resample desitnation key data if rule is added after ingest has begun, that is why we are defining these before ingesting data.
+* rules will not resample desitnation key data if rule is added after ingesting has begun, that is why we are defining these before ingesting data.
 
 For this post we are going to focus on creating rules for the temp attribute.  We can create our 3 destination keys and 3 rules from the CLI as well.  We will define what aggregation type we are scoping to in the key structure with the interval it is concerned with.
 
@@ -250,7 +245,7 @@ Rules
 >> TS.CREATERULE sensors:47732234:temp sensors:47732234:temp:avg:1day AGGREGATION AVG 86400000
 ```
 
-This can also be completed programatically!
+This can also be completed via code!
 
 ```javascript
  await rtsClient
@@ -287,20 +282,19 @@ We can use TS.INFO to see our new rules just the same and now running it against
 >> TS.INFO sensors:47732234:temp:avg:1hr
 >> TS.INFO sensors:47732234:temp:avg:1day
 ```
-![TS.INFO.WITH.RULES](images/tsinfowrules.png)
+![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/zs3c8ijcl8fwjrq1w7p7.png)
 
 | 1 Day                                     | 1 Hour                                   | 5 Min                                     |
 |-------------------------------------------|------------------------------------------|-------------------------------------------|
-| ![TS.INFO.WITH.RULES](images/avg1day.png) | ![TS.INFO.WITH.RULES](images/avg1hr.png) | ![TS.INFO.WITH.RULES](images/avg5min.png) |
+| ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/shi45nz3y2zd23c8jld3.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ukrzanjvh0f58ncxp1wm.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/xmf90zpo9xvcvnphkdsc.png) |
 
-
-Now that we have all of our keys and rules created we can look into ingesting some sample data. 
+Now that we have all of our keys and rules created, we can look into ingesting some sample data. 
 
 ----------------------------------------------------------------
 
 ### Ingest
 
-For the purpose of this post we will continue to focus on ingesting a single attribute from our sample log.  As data readings are coming from the system we would have an API on the edge that would parse the log and update the TimeSeries instance.  We are going to simply inest a few days worth of sample data for demo purposes around the temp attribute.  
+For the purpose of this post, we will continue to focus on ingesting a single attribute from our sample log.  As data readings are coming from the system, we would have an API on the edge that would parse the log and update the TimeSeries instance.  We are going to simply inest a few days worth of sample data for demo purposes around the temp attribute.  
 
 Using the base code and redistimeseries-js module that we set up earlier we can add some functionality to simulate this process.  You can tweak the setInterval so that you can ingest different attributes or intervals. I ingested Jan 1 12AM through Jan 2 3:40AM with one minute interval logs.
 
@@ -329,11 +323,9 @@ setInterval(async () => {
   return await insertTS('sensors:47732234:temp',Date.parse(timeStamp.format()), randomTemp(45, 77), labels);
 }, 200);
 
-
 ```
 
 Once the ingest is complete we can return back to RedisInsight and use TS.INFO to retrieve our base key details as well as take a peak at the destination keys that have the groomed data represented in real time!
-
 
 ```console
 >> TS.INFO sensors:47732234:temp
@@ -341,12 +333,11 @@ Once the ingest is complete we can return back to RedisInsight and use TS.INFO t
 >> TS.INFO sensors:47732234:temp:avg:1hr
 >> TS.INFO sensors:47732234:temp:avg:1day
 ```
-![TS.INFO.WITH.RULES](images/basekeywithvalues.png)
+![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3kgtbqw76wr1huxu9ge3.PNG)
 
 | 1 Day - 1 Sample                                 | 1 Hour - 27 Samples                             | 5 Min - 332 Samples                              |
 |--------------------------------------------------|-------------------------------------------------|--------------------------------------------------|
-| ![TS.INFO.WITH.RULES](images/1daywithvalues.png) | ![TS.INFO.WITH.RULES](images/1hrwithvalues.png) | ![TS.INFO.WITH.RULES](images/5minwithvalues.png) |
-
+| ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/k4si3x48oz5ie7myevmc.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/axg866j0824daqqvi7f3.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/972a4bygihxvcbasd1lx.PNG) |
 
 A quick look over the base key entries count (highlighted) and the destination keys gives us good context.  All the down sampled data is accurately represented by the time buckets we allocated for them to produce.
 
@@ -369,4 +360,5 @@ In the next post we will cover the exciting parts that really show off the power
 * Filtering with Labels
 * API Code for composing complex objects across multiple keys
 * Visualizing with Grafana
+
 
