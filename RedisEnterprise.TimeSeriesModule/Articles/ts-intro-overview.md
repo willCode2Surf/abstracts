@@ -5,7 +5,7 @@ In this post we will cover all the details and considerations taken to make for 
 We will walk through:
 
 * Identifying a problem area that TimeSeries can fix
-* Laying out the path to succes by
+* Laying out the path to success by
   * Setting Up the proper instance in Azure
   * Understanding the TimeSeries Module features
   * Key/Data Topology
@@ -13,9 +13,9 @@ We will walk through:
   
 ## Where TimeSeries Module Fits In
 
-Leveraging the TimeSeries Module you are likely engaged in some level of analytics.  Analytics is the power food for intelligent decision making.  Finding a place where the TimeSeries Module can streamline operations in your enterprise will depend on existing infrastructure, pipelines, and legacy processes.  Never fear, working this technology into existing stacks is well supported across various programming languages (Java, Go, Python, JavaScript/TypeScript, Rust, and Ruby).
+Leveraging the TimeSeries Module you are likely engaged in some level of analytics.  Analytics is the power food for intelligent decision-making.  Finding a place where the TimeSeries Module can streamline operations in your enterprise will depend on existing infrastructure, pipelines, and legacy processes.  Never fear, working this technology into existing stacks is well-supported across various programming languages (Java, Go, Python, JavaScript/TypeScript, Rust, and Ruby).
 
-For this scenario we will look at replacing some long standing processes that create fixed cost and ongoing development costs.  We will also leverage Node with 
+For this scenario we will look at replacing some long-standing processes that create fixed cost and ongoing development costs.  We will also leverage Node with 
 [RedisTimeSeries-JS](https://www.npmjs.com/package/redistimeseries-js).  We will also be propping up our Redis TimeSeries instance in [Azure](https://redislabs.com/cloud-partners/microsoft-azure/)  
 
 ## Success with Redis Enterprise TimeSeries Module
@@ -42,7 +42,7 @@ The Redis Enterprise platform brings with it the standard expectation of a tried
 
 There are a few key concepts that we need to expand on so that you can get most of the implementation.  Let’s cover the concepts that need to be understood before ingesting data.  (We will talk consumption in depth in the next post.)
 
-1. Keys, this is not a new concept and are the way to sink data into the instance.  There are some attributes of keys that you can finetune data policies.
+1. Keys, this is not a new concept and are the way to sink data into the instance.  There are some attributes of keys that you can fine-tune data policies.
     * retention, give your data a TTL
     * labels, give context and additional attributes to your data
     * duplicate policy, determine what happens when you have data bumping into each other
@@ -68,9 +68,9 @@ There are a few key concepts that we need to expand on so that you can get most 
       * a predefined aggregation option must be provided
       * the time interval for the sampled data must be provided
 
-4. Labels, the meta data option to give your data more context.
+4. Labels, the metadata option to give your data more context.
     * Label/Value collection that represents broader context of the underlying data
-    * valuable at the digest/consumption layer to provide aggregation across keys by other similiar characteristics
+    * valuable at the digest/consumption layer to provide aggregation across keys by other similar characteristics
 
 5. Ingest
 
@@ -78,17 +78,17 @@ There are a few key concepts that we need to expand on so that you can get most 
 
 ### Key/Data Topology
 
-If migrating from another system or starting from the ground up there will be some data points that need to be mapped to appropriate key structures.  Data points can be ingested as singular readings but are usually accompanied with additional data that gives a full picture of what just occurred.  Data ingest could come in at extremely high sampling rates (health devices, IoT sensors, weather apparatus) for the same system providing the data point and we need to plan on how to handle this at scale so that we can surface downsampled data in a concise manner without impacting performance.
+If migrating from another system or starting from the ground up there will be some data points that need to be mapped to appropriate key structures.  Data points can be ingested as singular readings but are usually accompanied by additional data that gives a full picture of what just occurred.  Data ingest could come in at extremely high sampling rates (health devices, IoT sensors, weather apparatus) for the same system providing the data point, and we need to plan on how to handle this at scale so that we can surface downsampled data concisely without impacting performance.
 
 Let's take a look at a sample log reading for a weather sensor.
 
-```javascript
+```json5
 {
   time: 1617293819263,
   temp: 55.425,
   wind: 13,
   windDirection: 13,
-  windChill: 51
+  windChill: 51,
   precipitation: 0,
   dewPoint: 20,
   humidity: .24,
@@ -102,23 +102,23 @@ Let's take a look at a sample log reading for a weather sensor.
 }
 ```
 
-This sample log has many constant attributes and some interesting data points that can vary with every reading.  If the scientific equipment produces a sample each second, then over a period of 24 hours we will receive 86,400 readings.  If we we had 100 devices in a particular region providing realtime weather data, we could easily ingest close to 9M logs.  To perform some level of analytics (either visually or with additional ETL/ML pipelines) we need to downsample the footprint.  
+This sample log has many constant attributes, and some interesting data points that can vary with every reading.  If the scientific equipment produces a sample each second, then over a period of 24 hours we will receive 86,400 readings.  If we had 100 devices in a particular region providing realtime weather data, we could easily ingest close to 9M logs.  To perform some level of analytics (either visually or with additional ETL/ML pipelines) we need to downsample the footprint.  
 
-Tradiontally one might sink this log reading into Cosmos or Mongo and aggregrate on demand while handling the downsampling in code.  This is problematic, does not scale well, and is destined to fail at some point.  The better approach is to sink this data into Redis Enterprise using the TimeSeries Module.  The first thing to planning for a succesfull TimeSeries implementation is flattening your logs by identifying both reading data and meta data.  
+Traditionally, one might sink this log reading into Cosmos or Mongo and aggregate on demand while handling the downsampling in code.  This is problematic, does not scale well, and is destined to fail at some point.  The better approach is to sink this data into Redis Enterprise using the TimeSeries Module.  The first thing to planning for a successful TimeSeries implementation is flattening your logs by identifying both reading data and metadata.  
 
-With our sample log we can build a pattern for key definitions that we can sink readings into while attaching, define the meta data we will attach with the keys and resolving a key path.
+With our sample log we can build a pattern for key definitions that we can sink readings into while attaching, define the metadata we will attach with the keys and resolving a key path.
 
 Let's evaluate again with some context. 
 
-```javascript
+```json5
 {
   time: 1617293819263,  // timestamp   
   temp: 55.425,         // reading
   wind: 13,             // reading
-  windDirection: 13,   // reading
-  windChill: 51        // reading
+  windDirection: 13,    // reading
+  windChill: 51,        // reading
   precipitation: 0,     // reading
-  dewPoint: 20,        // reading
+  dewPoint: 20,         // reading
   humidity: .24,        // reading
   visibility: 10,       // reading
   barometer: 30.52,     // reading
@@ -126,7 +126,7 @@ Let's evaluate again with some context.
   lon: 101.82,          // meta-data
   elevation: 3281,      // meta-data
   city: 2232,           // meta-data
-  deviceId: 47732234   // identification
+  deviceId: 47732234    // identification
 }
 ```
 
@@ -144,13 +144,13 @@ With this topology defined we need to create keys for the attributes.
 | wind          | sensors:47732234:wind          |
 | windDirection | sensors:47732234:windDirection |
 | windChill     | sensors:47732234:windChill     |
-| precipitation | sensors:47732234:percipitation |
+| precipitation | sensors:47732234:precipitation |
 | dewPoint      | sensors:47732234:dewPoint      |
-| humidity      | sensors:47732234:hunidity      |
+| humidity      | sensors:47732234:humidity      |
 | visibility    | sensors:47732234:visibility    |
 | barometer     | sensors:47732234:barometer     |
 
-Before we create the keys, we need to identify the meta-data that we are going to associate with them as well as the TTL for series data and our duplcate policy.  TTL will default to 0 by default but in our case, we want to keep the data for 30 days and take the last reading if there was contention on a series. This
+Before we create the keys, we need to identify the meta-data that we are going to associate with them as well as the TTL for series data and our duplicate policy.  TTL will default to 0 by default but in our case, we want to keep the data for 30 days and take the last reading if there was contention on a series. This
 
 Based on our sample log we need to add the following labels to our keys.
 
@@ -167,7 +167,7 @@ Now let's create the keys.  You can always create the keys from the CLI in Redis
 >> TS.CREATE sensors:47732234:temp RETENTION 2592000000 DUPLICATE_POLICY LAST LABELS lat 33.67 lon 101.82 elevation 3281 city 2232
 ```
 
-This works but to complete this for many sensors across many attributes we should lean in on some code to streamline this generation.  Using the redistimeseries-js library we can handle this programatically.
+This works but to complete this for many sensors across many attributes we should lean in on some code to streamline this generation.  Using the redistimeseries-js library we can handle this programmatically.
 
 ```javascript
 // set up our Redis Enterprise instance
@@ -212,20 +212,20 @@ We can validate that our key has been created by using the RedisInsight CLI comm
 
 ### Making Data Reactive with Rules
 
-Aggregration out of the Redis Enterprise TimeSeries Module is very fast but can be optimized to provide even better performance if you know what kind of data summaries your data scientist, analyst, or systems need to make correct decisions.  Using our singular device that is producing real time weather information we have determined that there are a few intervals that will be extracted regularly.
+Aggregation out of the Redis Enterprise TimeSeries Module is very fast but can be optimized to provide even better performance if you know what kind of data summaries your data scientist, analyst, or systems need to make correct decisions.  Using our singular device that is producing real time weather information we have determined that there are a few intervals that will be extracted regularly.
 
 * 5 minutes
 * 1 hour
 * 1 day
 
-This is where we can define rules that react to data as it is ingested and downsampled using the built in aggregration techniques to provide concise representation of many raw logs into a real time data point. 
+This is where we can define rules that react to data as it is ingested and downsampled using the built-in aggregation techniques to provide concise representation of many raw logs into a real time data point. 
 
-NOTE:  there are a couple things about rules that need to be made understood upfront.
+NOTE:  there are a couple of things about rules that need to be made understood upfront.
 
 * rules need an aggregation type.
 * rules need a time interval to retain samples for.
 * rules need downstream keys to sink the reactive data into.
-* rules will not resample desitnation key data if rule is added after ingesting has begun, that is why we are defining these before ingesting data.
+* rules will not resample destination key data if rule is added after ingesting has begun, that is why we are defining these before ingesting data.
 
 For this post we are going to focus on creating rules for the temp attribute.  We can create our 3 destination keys and 3 rules from the CLI as well.  We will define what aggregation type we are scoping to in the key structure with the interval it is concerned with.
 
@@ -294,7 +294,7 @@ Now that we have all of our keys and rules created, we can look into ingesting s
 
 ### Ingest
 
-For the purpose of this post, we will continue to focus on ingesting a single attribute from our sample log.  As data readings are coming from the system, we would have an API on the edge that would parse the log and update the TimeSeries instance.  We are going to simply inest a few days worth of sample data for demo purposes around the temp attribute.  
+For the purpose of this post, we will continue to focus on ingesting a single attribute from our sample log.  As data readings are coming from the system, we would have an API on the edge that would parse the log and update the TimeSeries instance.  We are going to simply ingest a few days worth of sample data for demo purposes around the temp attribute.  
 
 Using the base code and redistimeseries-js module that we set up earlier we can add some functionality to simulate this process.  You can tweak the setInterval so that you can ingest different attributes or intervals. I ingested Jan 1 12AM through Jan 2 3:40AM with one minute interval logs.
 
@@ -325,7 +325,7 @@ setInterval(async () => {
 
 ```
 
-Once the ingest is complete we can return back to RedisInsight and use TS.INFO to retrieve our base key details as well as take a peak at the destination keys that have the groomed data represented in real time!
+Once ingest is complete we can return to RedisInsight and use TS.INFO to retrieve our base key details as well as take a peak at the destination keys that have the groomed data represented in real time!
 
 ```console
 >> TS.INFO sensors:47732234:temp
@@ -339,7 +339,7 @@ Once the ingest is complete we can return back to RedisInsight and use TS.INFO t
 |----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
 | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/k4si3x48oz5ie7myevmc.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/axg866j0824daqqvi7f3.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/972a4bygihxvcbasd1lx.PNG) |
 
-A quick look over the base key entries count (highlighted) and the destination keys gives us good context.  All the down sampled data is accurately represented by the time buckets we allocated for them to produce.
+A quick look over the base key entries count (highlighted), and the destination keys gives us good context.  All the down sampled data is accurately represented by the time buckets we allocated for them to produce.
 
 ----------------------------------------------------------------
 
@@ -351,7 +351,7 @@ Awesome! Hopefully at this point you have a grasp on the following concepts:
 * Data Topology and flattening logs to linear attributes as keys
 * Rules for reactive data and destination keys
 * Using RedisInsight and some basic commands for checking series state (TS.INFO, TS.CREATE, TS.CREATERULE)
-* How to programatically interact with the TimeSeries instance to ingest and process data to scale
+* How to programmatically interact with the TimeSeries instance to ingest and process data to scale
 
 In the next post we will cover the exciting parts that really show off the power of extracting and working with the data in the Redis Enterprise TimeSeries instance.  What to look forward to:
 
@@ -360,5 +360,3 @@ In the next post we will cover the exciting parts that really show off the power
 * Filtering with Labels
 * API Code for composing complex objects across multiple keys
 * Visualizing with Grafana
-
-
