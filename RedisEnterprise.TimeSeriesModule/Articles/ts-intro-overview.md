@@ -210,7 +210,7 @@ We can validate that our key has been created by using the RedisInsight CLI comm
 
 ----------------------------------------------------------------
 
-### Making Data Reactive with rules
+### Making Data Reactive with Rules
 
 Aggregration out of the Redis Enterprise TimeSeries Module is very fast but can be optimized to provide even better performance if you know what kind of data summaries your data scientist, analyst, or systems need to make correct decisions.  Using our singular device that is producing real time weather information we have determined that there are a few intervals that will be extracted regularly.
 
@@ -249,7 +249,7 @@ This can also be completed via code!
 
 ```javascript
  await rtsClient
-      .createRule(`sensors:47732234:temp`, `pumps:47732234:temp:avg:5min`)
+      .createRule(`sensors:47732234:temp`, `sensors:47732234:temp:avg:5min`)
       .aggregation(Aggregation.AVG, 300000)
       .send().catch((error) => {
         console.error(error);
@@ -257,7 +257,7 @@ This can also be completed via code!
         return true;
       });
  await rtsClient
-      .createRule(`sensors:47732234:temp`, `pumps:47732234:temp:avg:1hr`)
+      .createRule(`sensors:47732234:temp`, `sensors:47732234:temp:avg:1hr`)
       .aggregation(Aggregation.AVG, 3600000)
       .send().catch((error) => {
         console.error(error);
@@ -265,7 +265,7 @@ This can also be completed via code!
         return true;
       });
 await rtsClient
-      .createRule(`sensors:47732234:temp`, `pumps:47732234:temp:avg:1day`)
+      .createRule(`sensors:47732234:temp`, `sensors:47732234:temp:avg:1day`)
       .aggregation(Aggregation.AVG, 86400000)
       .send().catch((error) => {
         console.error(error);
@@ -284,8 +284,8 @@ We can use TS.INFO to see our new rules just the same and now running it against
 ```
 ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/zs3c8ijcl8fwjrq1w7p7.png)
 
-| 1 Day                                     | 1 Hour                                   | 5 Min                                     |
-|-------------------------------------------|------------------------------------------|-------------------------------------------|
+| 1 Day                                                                                                    | 1 Hour                                                                                                   | 5 Min                                                                                                    |
+|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
 | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/shi45nz3y2zd23c8jld3.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ukrzanjvh0f58ncxp1wm.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/xmf90zpo9xvcvnphkdsc.png) |
 
 Now that we have all of our keys and rules created, we can look into ingesting some sample data. 
@@ -335,8 +335,8 @@ Once the ingest is complete we can return back to RedisInsight and use TS.INFO t
 ```
 ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3kgtbqw76wr1huxu9ge3.PNG)
 
-| 1 Day - 1 Sample                                 | 1 Hour - 27 Samples                             | 5 Min - 332 Samples                              |
-|--------------------------------------------------|-------------------------------------------------|--------------------------------------------------|
+| 1 Day - 1 Sample                                                                                         | 1 Hour - 27 Samples                                                                                      | 5 Min - 332 Samples                                                                                      |
+|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
 | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/k4si3x48oz5ie7myevmc.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/axg866j0824daqqvi7f3.png) | ![TS.INFO.WITH.RULES](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/972a4bygihxvcbasd1lx.PNG) |
 
 A quick look over the base key entries count (highlighted) and the destination keys gives us good context.  All the down sampled data is accurately represented by the time buckets we allocated for them to produce.
